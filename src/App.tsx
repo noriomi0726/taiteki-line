@@ -452,6 +452,9 @@ function App() {
   const reachedMedian = analysis.median !== null && currentValue > analysis.median;
   const retreatRemaining = Math.max(0, lines.撤退ライン - currentValue);
   const retreatInvestment = retreatRemaining / Math.max(baseRateValue, 1) * 1000;
+  const nextJudgementLine = currentValue >= lines.勝負ライン ? lines.撤退ライン : lines.勝負ライン;
+  const retreatExpectation = retreatRemaining > 0 && errors.length === 0 ? expectation(retreatRemaining, denominatorValue) : null;
+  const retreatNoHit = retreatExpectation === null ? null : 1 - retreatExpectation;
   const theoreticalMedian = nominalLines[50];
 
   return (
@@ -470,6 +473,48 @@ function App() {
           </div>
         </div>
       </header>
+
+      <section className="rounded-lg border border-cyan-300/30 bg-slate-950/85 p-4 shadow-glow sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-cyan-200">実戦用サマリー</p>
+            <p className="mt-2 text-4xl font-black leading-none text-white sm:text-5xl">
+              {errors.length === 0 ? `${formatNumber(currentValue)}回転` : "入力確認"}
+            </p>
+          </div>
+          <div className={`rounded-lg border px-4 py-3 ${currentStatus?.style ?? "border-rose-400/50 bg-rose-500/15 text-rose-100"}`}>
+            <p className="text-xs opacity-80">判定</p>
+            <p className="text-2xl font-black">{currentStatus?.label ?? "再計算待ち"}</p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-lg border border-white/10 bg-white/[0.045] p-3">
+            <p className="text-xs text-slate-400">次の判断地点</p>
+            <p className="mt-1 text-3xl font-black text-white">{errors.length === 0 ? `${formatNumber(nextJudgementLine)}回転` : "-"}</p>
+            <p className="mt-1 text-xs text-slate-400">{currentValue >= lines.勝負ライン ? "勝負ライン超過後は撤退ラインを表示" : "まず勝負ラインを確認"}</p>
+          </div>
+          <div className="rounded-lg border border-amber-300/40 bg-amber-300/10 p-3">
+            <p className="text-xs text-amber-100/80">撤退ラインまで</p>
+            <p className="mt-1 text-3xl font-black text-white">
+              {errors.length === 0 ? (retreatRemaining > 0 ? `あと${formatNumber(retreatRemaining)}回転` : "到達済み") : "-"}
+            </p>
+            <p className="mt-1 text-xs text-amber-100/80">目安投資 {errors.length === 0 ? formatYen(retreatInvestment) : "-"}</p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/[0.045] p-3 sm:col-span-2 lg:col-span-1">
+            <p className="text-xs text-slate-400">撤退ラインまでの確率</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-xs text-slate-400">今から期待度</p>
+                <p className="text-2xl font-black text-white">{errors.length > 0 ? "-" : retreatExpectation === null ? "到達済み" : `約${formatPercent(retreatExpectation)}`}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">当たらない確率</p>
+                <p className="text-2xl font-black text-white">{errors.length > 0 ? "-" : retreatNoHit === null ? "到達済み" : `約${formatPercent(retreatNoHit)}`}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <Section title="1. 基本入力">
         <div className="grid gap-3 md:grid-cols-3">
